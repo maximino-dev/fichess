@@ -19,7 +19,7 @@ void Engine::importFen(char const *fen) {
 	for (int i = 0; i < SIZE; i++)
 	{
 		column = 0;
-		while (fen[cursor] != '/')
+		while (fen[cursor] != '/' && fen[cursor] != ' ')
 		{
 			if (std::isalpha(fen[cursor])) {
 				board[i][column] = fen[cursor];
