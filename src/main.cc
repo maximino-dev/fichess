@@ -25,7 +25,7 @@ int main() {
 	
 	Engine eng;
 
-	eng.importFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	eng.importFen("1nbqkbnr/1ppp1ppp/2r5/p3p3/4P3/2K5/PPPP1PPP/RNBQ1BNR w k - 4 5");
 
 	eng.printBoard();
 

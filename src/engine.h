@@ -3,14 +3,23 @@
 
 #define SIZE 8
 #include <iostream>
-#include <string>
+#include <list>
+using namespace std;
 
 class Engine {
 	private:
-		char board[SIZE][SIZE];
+		char board[SIZE * SIZE];
 		char turn; // Who's turn ? 'w' white's turn, 'b' black's turn
 
-		void initBoard(); 
+		void initBoard();
+		bool isKingChecked();
+		bool isOpponentPiece(char piece);
+		bool isOwnPiece(char piece);
+
+		list<int> getMoves(char piece, int line, int col);
+		list<int> getRookMoves(int line, int col);
+		void changeTurn();
+		bool inBoard(int line, int col);
 	public:
 		Engine() {
 			initBoard();

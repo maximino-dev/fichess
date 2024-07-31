@@ -3,7 +3,9 @@ CFLAGS=-Wall
 SRC=engine.cc main.cc
 OBJ=$(SRC:.c=.o)
 
-all: $(OBJ)
+all: engine
+
+engine: $(OBJ)
 	$(CC) $^ -o engine
 
 main.o: engine.h
