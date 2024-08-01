@@ -18,14 +18,13 @@
 
 */
 
-#include<iostream>
 #include "engine.h"
 
 int main() {
 	
 	Engine eng;
 
-	eng.importFen("1nbqkbnr/1ppp1ppp/2r5/p3p3/4P3/2K5/PPPP1PPP/RNBQ1BNR w k - 4 5");
+	eng.importFen("rn1qkbnr/ppp1pppp/8/3p4/4P1b1/8/PPPPKPPP/RNBQ1BNR w kq - 2 3");
 
 	eng.printBoard();
 

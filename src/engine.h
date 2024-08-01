@@ -18,6 +18,8 @@ class Engine {
 
 		list<int> getMoves(char piece, int line, int col);
 		list<int> getRookMoves(int line, int col);
+		list<int> getKnightMoves(int line, int col);
+		list<int> getBishopMoves(int line, int col);
 		void changeTurn();
 		bool inBoard(int line, int col);
 	public:
