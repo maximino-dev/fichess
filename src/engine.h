@@ -16,26 +16,29 @@ class Engine {
 		bool canBQ; // Can black king castle queen side?
 		bool canBK; // Can black king castle king side?
 
+		int DEPTH;
+
 
 		void initBoard();
 		bool isKingChecked();
-		bool isOpponentPiece(char piece);
-		bool isOwnPiece(char piece);
+		bool isOpponentPiece(char const piece);
+		bool isOwnPiece(char const piece);
 
-		list<int> getMoves(char piece, int line, int col);
-		list<int> getRookMoves(int line, int col);
-		list<int> getKnightMoves(int line, int col);
-		list<int> getBishopMoves(int line, int col);
-		list<int> getQueenMoves(int line, int col);
-		list<int> getPawnMoves(int line, int col);
-		list<int> getKingMoves(int line, int col);
+		list<int> getMoves(char const piece, int const line, int const col);
+		list<int> getRookMoves(int const line, int const col);
+		list<int> getKnightMoves(int const line, int const col);
+		list<int> getBishopMoves(int const line, int const col);
+		list<int> getQueenMoves(int const line, int const col);
+		list<int> getPawnMoves(int const line, int const col);
+		list<int> getKingMoves(int const line, int const col);
 
 		void getScorePieces(int &whiteScore, int &blackScore);
 
 		void changeTurn();
-		bool inBoard(int line, int col);
+		bool inBoard(int const line, int const col);
 
-		void getBestMove(char &piece, int &line, int &col);
+		int recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &bestCol);
+		void play(char piece, int const fromLine, int const fromCol, int const line, int const col);
 	public:
 		Engine() {
 			initBoard();
@@ -45,6 +48,7 @@ class Engine {
 
 		void importFen(char const *fen);
 		int getScore();
+		void getBestMove();
 };
 
 #endif

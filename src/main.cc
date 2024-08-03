@@ -24,11 +24,11 @@ int main() {
 	
 	Engine eng;
 
-	eng.importFen("rn1qkbnr/pp2pppp/2p5/3p4/4P1b1/8/PPPPKPPP/RNB2BNR w kq - 2 3");
+	eng.importFen("rnbqkbnr/pppp1ppp/8/8/3Pp3/3Q3N/PPP1PPPP/RNB1KB1R b KQkq - 1 3");
 
 	eng.printBoard();
 
-	cout << eng.getScore() << endl;
+	eng.getBestMove();
 
 	return 0;
 }

@@ -17,6 +17,8 @@ void Engine::initBoard() {
 	canWK = true;
 	canBQ = true;
 	canBK = true;
+
+	DEPTH = 5;
 }
 
 // Import a fen position (Forsyth-Edwards Notation) into our board
@@ -67,6 +69,8 @@ void Engine::importFen(char const *fen) {
 			cursor++;
 		}
 	}
+
+	isKingChecked();
 }
 
 void Engine::printBoard() {
@@ -112,7 +116,10 @@ bool Engine::isKingChecked() {
 	for (i = 0; i < SIZE; i++) {
 		for (j = 0; j < SIZE; j++) {
 			if (isOpponentPiece(board[i * SIZE + j])) {
+				changeTurn();
 				moves = getMoves(board[i * SIZE + j], i, j);
+				changeTurn();
+
 				for (it = moves.begin(); it != moves.end(); ++it)
 				{
 					line = *it / SIZE;
@@ -129,23 +136,21 @@ bool Engine::isKingChecked() {
 	return false;
 }
 
-bool Engine::isOpponentPiece(char piece) {
+bool Engine::isOpponentPiece(char const piece) {
 	if ( (turn == 'b' and isupper(piece) > 0) || (turn == 'w' and islower(piece) > 0) ) {
 		return true;
 	}
 	return false;
 }
 
-bool Engine::isOwnPiece(char piece) {
+bool Engine::isOwnPiece(char const piece) {
 	return piece != ' ' && !isOpponentPiece(piece);
 }
 
-list<int> Engine::getMoves(char piece, int line, int col) {
+list<int> Engine::getMoves(char const piece, int const line, int const col) {
 	list<int> moves;
 
 	char piece_t = tolower(piece);
-
-	changeTurn();
 
 	switch (piece_t) {
 		case 'r':
@@ -160,21 +165,19 @@ list<int> Engine::getMoves(char piece, int line, int col) {
 		case 'q':
 			moves = getQueenMoves(line, col);
 			break;
-		case 'p':
-			moves = getPawnMoves(line, col);
-			break;
 		case 'k':
 			moves = getKingMoves(line, col);
 			break;
+		case 'p':
+			moves = getPawnMoves(line, col);
+			break;
 	}
-
-	changeTurn();
 
 	return moves;
 }
 
 // Get possible positions for a rook in the board
-list<int> Engine::getRookMoves(int line, int col) {
+list<int> Engine::getRookMoves(int const line, int const col) {
 	list<int> moves;
 
 	int horizontal[4] = {1, -1, 0, 0};
@@ -194,7 +197,7 @@ list<int> Engine::getRookMoves(int line, int col) {
 			line_t = line_t + vertical[i];
 			col_t = col_t + horizontal[i];
 
-			if (isOpponentPiece(board[line_t * SIZE + col_t])) {
+			if (inBoard(line_t, col_t) && isOpponentPiece(board[line_t * SIZE + col_t])) {
 				moves.push_back(line_t * SIZE + col_t);
 				break;
 			}
@@ -205,7 +208,7 @@ list<int> Engine::getRookMoves(int line, int col) {
 }
 
 // Get possible positions for a knight in the board
-list<int> Engine::getKnightMoves(int line, int col) {
+list<int> Engine::getKnightMoves(int const line, int const col) {
 	list<int> moves;
 
 	int horizontal[8] = {2, 2, -2, -2, -1, 1, 1, -1};
@@ -228,7 +231,7 @@ list<int> Engine::getKnightMoves(int line, int col) {
 }
 
 // Get possible positions for a bishop in the board
-list<int> Engine::getBishopMoves(int line, int col) {
+list<int> Engine::getBishopMoves(int const line, int const col) {
 	list<int> moves;
 
 	int horizontal[4] = {1, 1, -1, -1};
@@ -248,7 +251,7 @@ list<int> Engine::getBishopMoves(int line, int col) {
 			line_t = line_t + vertical[i];
 			col_t = col_t + horizontal[i];
 
-			if (isOpponentPiece(board[line_t * SIZE + col_t])) {
+			if (inBoard(line_t, col_t) && isOpponentPiece(board[line_t * SIZE + col_t])) {
 				moves.push_back(line_t * SIZE + col_t);
 				break;
 			}
@@ -259,7 +262,7 @@ list<int> Engine::getBishopMoves(int line, int col) {
 }
 
 // Get possible positions for a bishop in the board
-list<int> Engine::getQueenMoves(int line, int col) {
+list<int> Engine::getQueenMoves(int const line, int const col) {
 	list<int> moves;
 
 	int horizontal[8] = {1, 1, -1, -1, 1, -1, 0, 0};
@@ -279,7 +282,7 @@ list<int> Engine::getQueenMoves(int line, int col) {
 			line_t = line_t + vertical[i];
 			col_t = col_t + horizontal[i];
 
-			if (isOpponentPiece(board[line_t * SIZE + col_t])) {
+			if (inBoard(line_t, col_t) && isOpponentPiece(board[line_t * SIZE + col_t])) {
 				moves.push_back(line_t * SIZE + col_t);
 				break;
 			}
@@ -290,7 +293,7 @@ list<int> Engine::getQueenMoves(int line, int col) {
 }
 
 // Get possible positions for a pawn in the board
-list<int> Engine::getPawnMoves(int line, int col) {
+list<int> Engine::getPawnMoves(int const line, int const col) {
 	list<int> moves;
 
 	if (turn == 'b') {
@@ -328,7 +331,7 @@ list<int> Engine::getPawnMoves(int line, int col) {
 }
 
 // Get possible positions for a king in the board
-list<int> Engine::getKingMoves(int line, int col) {
+list<int> Engine::getKingMoves(int const line, int const col) {
 	list<int> moves;
 
 	int horizontal[8] = {1, 1, -1, -1, 1, -1, 0, 0};
@@ -363,7 +366,7 @@ void Engine::changeTurn() {
 	}
 }
 
-bool Engine::inBoard(int line, int col) {
+bool Engine::inBoard(int const line, int const col) {
 	return (line < SIZE && line >= 0 && col < SIZE && col >= 0);
 }
 
@@ -385,13 +388,7 @@ int Engine::getScore() {
 
 	getScorePieces(whiteScore, blackScore);
 
-	cout << "White: " << whiteScore << "BLACK: " << blackScore << endl;
-
-	if (turn == 'b') {
-		return blackScore - whiteScore;
-	} else {
-		return whiteScore - blackScore;
-	}
+	return whiteScore - blackScore;
 }
 
 void Engine::getScorePieces(int &whiteScore, int &blackScore) {
@@ -405,17 +402,17 @@ void Engine::getScorePieces(int &whiteScore, int &blackScore) {
 	}
 }
 
-bool isBlackPiece(char piece) {
+bool isBlackPiece(char const piece) {
 	return piece == 'r' || piece == 'b' 
 	|| piece == 'n' || piece == 'q' ||
 	piece == 'k' || piece == 'p';
 }
 
-bool isWhitePiece(char piece) {
+bool isWhitePiece(char const piece) {
 	return piece != ' ' && !isBlackPiece(piece);
 }
 
-int getPieceScore(char piece) {
+int getPieceScore(char const piece) {
 	char piece_t = tolower(piece);
 
 	switch (piece_t) {
@@ -429,25 +426,41 @@ int getPieceScore(char piece) {
 		case 'p':
 			return 1;
 		case 'k':
-			return 0;
+			return 10000;
 	}
 
 	return 0;
 }
 
-void Engine::getBestMove(char &piece, int &line, int &col) {
+void Engine::getBestMove() {
+	char bestPiece = ' ';
+	int bestLine = 0;
+	int bestCol = 0;
+	recursiveBestMove(DEPTH, bestPiece, bestLine, bestCol);
+
+	cout << "Best move : "<< bestPiece << bestLine << bestCol << endl;
+}
+
+int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &bestCol) {
+
+	if (depth == 0) {
+		return 0;
+	}
 	list<int>::iterator it;
 	list<int> moves;
 
+	vector<char> board_temp;
+
 	int i, j;
 
-	char currentPiece = ' ';
+	char currentPiece;
 	
 	int currentLine;
 	int currentCol;
 
 	int currentScore;
-	int bestScore;
+	int bestScore = -100000;
+	int worstScore = 100000;
 
 	for (i = 0; i < SIZE; i++) {
 		for (j = 0; j < SIZE; j++) {
@@ -459,13 +472,45 @@ void Engine::getBestMove(char &piece, int &line, int &col) {
 					currentLine = *it / SIZE;
 					currentCol = *it % SIZE;
 
-					// TODO: calculate the best position score recursively
+					board_temp = board;
+
+					play(currentPiece, i, j, currentLine, currentCol);
+
+					changeTurn();
+					
+					currentScore = getScore() + recursiveBestMove(depth - 1, bestPiece, bestLine, bestCol);
+					
+					changeTurn();
+
+					board = board_temp;
+
+					if (currentScore > bestScore) {
+						bestScore = currentScore;
+						if (depth == DEPTH && turn == 'w') {
+							bestPiece = currentPiece;
+							bestLine = currentLine;
+							bestCol	= currentCol;
+						}
+					} else if (currentScore < worstScore) {
+						worstScore = currentScore;
+						if (depth == DEPTH && turn == 'b') {
+							bestPiece = currentPiece;
+							bestLine = currentLine;
+							bestCol	= currentCol;
+						}
+					}
 				}
 			}
 		}
 	}
 
-	if (bestScore == -1000) {
-		cout << "Game finished" << endl;
+	if (turn == 'b') {
+		return worstScore;
 	}
+	return bestScore;
+}
+
+void Engine::play(char piece, int const fromLine, int const fromCol, int const line, int const col) {
+	board[fromLine * SIZE + fromCol] = ' ';
+	board[line * SIZE + col] = piece;
 }
