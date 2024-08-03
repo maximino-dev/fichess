@@ -20,11 +20,18 @@
 
 #include "engine.h"
 
-int main() {
+int main(int argc, char *argv[]) {
 	
+	if (argc != 2) {
+		cout << "\tUsage: ./engine fen_position (with 'fen_position' a valid Forsyth-Edwards Notation) \n\
+\tExample: ./engine rnb1kbnr/pppp1ppp/4p3/6q1/8/1P4P1/PBPPPP1P/RN1QKBNR b KQkq - 0 3\n\
+The progam then tries to return the best move..." << endl;
+		return 1;
+	}
+
 	Engine eng;
 
-	eng.importFen("rnbqkbnr/pppp1ppp/8/8/3Pp3/3Q3N/PPP1PPPP/RNB1KB1R b KQkq - 1 3");
+	eng.importFen(argv[1]);
 
 	eng.printBoard();
 

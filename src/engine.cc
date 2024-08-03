@@ -69,8 +69,6 @@ void Engine::importFen(char const *fen) {
 			cursor++;
 		}
 	}
-
-	isKingChecked();
 }
 
 void Engine::printBoard() {
@@ -191,6 +189,11 @@ list<int> Engine::getRookMoves(int const line, int const col) {
 		line_t = line + vertical[i];
 		col_t = col + horizontal[i];
 
+		if (inBoard(line_t, col_t) && isOpponentPiece(board[line_t * SIZE + col_t])) {
+				moves.push_back(line_t * SIZE + col_t);
+				continue;
+		}
+
 		while (board[line_t * SIZE + col_t] == ' ' && inBoard(line_t, col_t)) {
 			moves.push_back(line_t * SIZE + col_t);
 
@@ -245,6 +248,11 @@ list<int> Engine::getBishopMoves(int const line, int const col) {
 		line_t = line + vertical[i];
 		col_t = col + horizontal[i];
 
+		if (inBoard(line_t, col_t) && isOpponentPiece(board[line_t * SIZE + col_t])) {
+				moves.push_back(line_t * SIZE + col_t);
+				continue;
+		}
+
 		while (inBoard(line_t, col_t) && board[line_t * SIZE + col_t] == ' ') {
 			moves.push_back(line_t * SIZE + col_t);
 
@@ -275,6 +283,11 @@ list<int> Engine::getQueenMoves(int const line, int const col) {
 	for (i = 0; i < 8; i++) {
 		line_t = line + vertical[i];
 		col_t = col + horizontal[i];
+
+		if (inBoard(line_t, col_t) && isOpponentPiece(board[line_t * SIZE + col_t])) {
+				moves.push_back(line_t * SIZE + col_t);
+				continue;
+		}
 
 		while (inBoard(line_t, col_t) && board[line_t * SIZE + col_t] == ' ') {
 			moves.push_back(line_t * SIZE + col_t);
@@ -403,9 +416,7 @@ void Engine::getScorePieces(int &whiteScore, int &blackScore) {
 }
 
 bool isBlackPiece(char const piece) {
-	return piece == 'r' || piece == 'b' 
-	|| piece == 'n' || piece == 'q' ||
-	piece == 'k' || piece == 'p';
+	return islower(piece) != 0;
 }
 
 bool isWhitePiece(char const piece) {
@@ -436,16 +447,22 @@ void Engine::getBestMove() {
 	char bestPiece = ' ';
 	int bestLine = 0;
 	int bestCol = 0;
-	recursiveBestMove(DEPTH, bestPiece, bestLine, bestCol);
+	int OPS = 0;
+	recursiveBestMove(DEPTH, bestPiece, bestLine, bestCol, OPS);
 
 	cout << "Best move : "<< bestPiece << bestLine << bestCol << endl;
+	cout << OPS << " positions tested" << endl;
 }
 
-int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &bestCol) {
+int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &bestCol, int &OPS) {
+
+	int positionScore = getScore();
 
 	if (depth == 0) {
-		return 0;
+		OPS++;
+		return positionScore;
 	}
+
 	list<int>::iterator it;
 	list<int> moves;
 
@@ -454,11 +471,11 @@ int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &be
 	int i, j;
 
 	char currentPiece;
+	int currentScore;
 	
 	int currentLine;
 	int currentCol;
 
-	int currentScore;
 	int bestScore = -100000;
 	int worstScore = 100000;
 
@@ -477,14 +494,21 @@ int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &be
 					play(currentPiece, i, j, currentLine, currentCol);
 
 					changeTurn();
-					
-					currentScore = getScore() + recursiveBestMove(depth - 1, bestPiece, bestLine, bestCol);
-					
+
+					currentScore = recursiveBestMove(depth - 1, bestPiece, bestLine, bestCol, OPS);
+
 					changeTurn();
 
 					board = board_temp;
 
-					if (currentScore > bestScore) {
+					if ((currentScore > 9000 && turn == 'w') || (currentScore < -9000 && turn == 'b') ) {
+						if (depth == DEPTH) {
+							bestPiece = currentPiece;
+							bestLine = currentLine;
+							bestCol	= currentCol;
+						}
+						return currentScore;
+					} else if (currentScore > bestScore) {
 						bestScore = currentScore;
 						if (depth == DEPTH && turn == 'w') {
 							bestPiece = currentPiece;
