@@ -2,6 +2,7 @@
 #define ENGINE_H
 
 #define SIZE 8
+#include <cstring>
 #include <iostream>
 #include <list>
 #include <vector>
@@ -15,9 +16,10 @@ class Engine {
 		bool canWK;	// Can white king castle king side?
 		bool canBQ; // Can black king castle queen side?
 		bool canBK; // Can black king castle king side?
+		int whiteKingPos;
+		int blackKingPos;
 
-		int DEPTH;
-
+		int nbMoves;
 
 		void initBoard();
 		bool isKingChecked();
@@ -32,12 +34,12 @@ class Engine {
 		list<int> getPawnMoves(int const line, int const col);
 		list<int> getKingMoves(int const line, int const col);
 
-		void getScorePieces(int &whiteScore, int &blackScore);
+		void getScorePieces(float &whiteScore, float &blackScore);
 
 		void changeTurn();
 		bool inBoard(int const line, int const col);
 
-		int recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &bestCol, int &OPS);
+		float recursiveBestMove(int depth, int &fromLine, int &fromCol, char &bestPiece, int &bestLine, int &bestCol, int &OPS);
 		void play(char piece, int const fromLine, int const fromCol, int const line, int const col);
 	public:
 		Engine() {
@@ -47,7 +49,7 @@ class Engine {
 		void printBoard();
 
 		void importFen(char const *fen);
-		int getScore();
+		float getScore();
 		void getBestMove();
 };
 

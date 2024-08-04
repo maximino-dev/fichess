@@ -3,7 +3,42 @@
 void printList(list<int> l);
 bool isBlackPiece(char piece);
 bool isWhitePiece(char piece);
-int getPieceScore(char piece);
+float getPieceScore(char const piece, int const line, int const col);
+
+float kingScores[8][8] = {
+	{0, -2, -3, -4, -4, -3, -2, 0},
+	{-1, -2, -2, -3, -3, -2, -2, -1},
+	{-2, -3, -3, -3, -3, -3, -3, -2},
+	{-2, -2, -2, -3, -3, -2, -2, -2},
+	{-1, -2, -2, -2, -2, -2, -2, -1},
+	{-1, -1, -1, -1, -1, -1, -1, -1},
+	{0, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0},
+	{1, 2, 1, 0, 0, 1, 2, 1}
+};
+
+float knightScores[8][8] = {
+    {-0.5, -0.4, -0.3, -0.3, -0.3, -0.3, -0.4, -0.5},
+    {-0.4, -0.2,  0.0,  0.2,  0.2,  0.0, -0.2, -0.4},
+    {-0.3,  0.0,  0.5,  0.6,  0.6,  0.5,  0.0, -0.3},
+    {-0.3,  0.2,  0.6,  0.8,  0.8,  0.6,  0.2, -0.3},
+    {-0.3,  0.2,  0.6,  0.8,  0.8,  0.6,  0.2, -0.3},
+    {-0.3,  0.0,  0.5,  0.6,  0.6,  0.5,  0.0, -0.3},
+    {-0.4, -0.2,  0.0,  0.2,  0.2,  0.0, -0.2, -0.4},
+    {-0.5, -0.4, -0.3, -0.3, -0.3, -0.3, -0.4, -0.5}
+};
+
+float bishopScores[8][8] = {
+    {-0.2, -0.4, -0.3, -0.3, -0.3, -0.3, -0.4, -0.2},
+    {-0.4, 0.5,  0.0,  0.0,  0.0,  0.0, 0.5, -0.4},
+    {-0.3,  0.0,  0.5,  0.4,  0.4,  0.5,  0.0, -0.3},
+    {-0.3,  0.0,  0.4,  0.8,  0.8,  0.4,  0.0, -0.3},
+    {-0.3,  0.0,  0.4,  0.8,  0.8,  0.4,  0.0, -0.3},
+    {-0.3,  0.0,  0.5,  0.4,  0.4,  0.5,  0.0, -0.3},
+    {-0.4, 0.5,  0.0,  0.0,  0.0,  0.0, 0.5, -0.4},
+    {-0.2, -0.4, -0.3, -0.3, -0.3, -0.3, -0.4, -0.2}
+};
+
+int DEPTH = 5;
 
 void Engine::initBoard() {
 
@@ -17,23 +52,30 @@ void Engine::initBoard() {
 	canWK = true;
 	canBQ = true;
 	canBK = true;
-
-	DEPTH = 5;
+	whiteKingPos = 0;
+	blackKingPos = 0;
+	nbMoves = 0;
 }
 
 // Import a fen position (Forsyth-Edwards Notation) into our board
 void Engine::importFen(char const *fen) {
 	int column;
 	int cursor = 0;
+	int i;
 
 	// Fill board
-	for (int i = 0; i < SIZE; i++)
+	for (i = 0; i < SIZE; i++)
 	{
 		column = 0;
 		while (fen[cursor] != '/' && fen[cursor] != ' ')
 		{
 			if (isalpha(fen[cursor])) {
 				board[i * SIZE + column] = fen[cursor];
+				if (board[i * SIZE + column] == 'K') {
+					whiteKingPos = i * SIZE + column;
+				} else if (board[i * SIZE + column] == 'k') {
+					blackKingPos = i * SIZE + column;
+				}
 				column++;
 			} else if (isdigit(fen[cursor])) {
 				column = column + (fen[cursor] - '0');
@@ -49,12 +91,14 @@ void Engine::importFen(char const *fen) {
 	turn = fen[cursor];
 
 	cursor++;
+	cursor++;
 
 	if (fen[cursor] == '-') {
 		canWQ = false;
 		canWK = false;
 		canBQ = false;
 		canBK = false;
+		cursor++;
 	} else {
 		while(fen[cursor] != ' ') {
 			if (fen[cursor] == 'k') {
@@ -68,6 +112,26 @@ void Engine::importFen(char const *fen) {
 			}
 			cursor++;
 		}
+	}
+
+	cursor++; // en passant data;
+	while(fen[cursor] != ' ') {
+		cursor++;
+	}
+
+	cursor++; // Nb king moves;
+	while(fen[cursor] != ' ') {
+		cursor++;
+	}
+
+	cursor++;
+
+	// Nb moves;
+	i = 0;
+	while(cursor < strlen(fen)) {
+		nbMoves = nbMoves * 10 * i + (fen[cursor] - '0');
+		cursor++;
+		i++;
 	}
 }
 
@@ -100,38 +164,6 @@ void Engine::printBoard() {
 		col++;
 	}
 	cout << endl;
-}
-
-// Tells if the actual player's king is in check
-bool Engine::isKingChecked() {
-	list<int>::iterator it;
-	list<int> moves;
-	char king;
-
-	int i, j;
-	int line, col;
-
-	for (i = 0; i < SIZE; i++) {
-		for (j = 0; j < SIZE; j++) {
-			if (isOpponentPiece(board[i * SIZE + j])) {
-				changeTurn();
-				moves = getMoves(board[i * SIZE + j], i, j);
-				changeTurn();
-
-				for (it = moves.begin(); it != moves.end(); ++it)
-				{
-					line = *it / SIZE;
-					col = *it % SIZE;
-					if ((turn == 'w' && board[line * SIZE + col] == 'K') ||
-						(turn == 'b' && board[line * SIZE + col] == 'k')) {
-						return true;
-					}
-				}
-			}
-		}
-	}
-
-	return false;
 }
 
 bool Engine::isOpponentPiece(char const piece) {
@@ -319,13 +351,13 @@ list<int> Engine::getPawnMoves(int const line, int const col) {
 			moves.push_back((line + 1) * SIZE + col);
 		}
 		if (inBoard(line + 1, col + 1) && isOpponentPiece(board[(line + 1) * SIZE + col + 1])) {
-			moves.push_back((line + 1) * SIZE + col + 1);	
+			moves.push_back((line + 1) * SIZE + col + 1);
 		}
 		if (inBoard(line + 1, col - 1) && isOpponentPiece(board[(line + 1) * SIZE + col - 1])) {
-			moves.push_back((line + 1) * SIZE + col - 1);	
+			moves.push_back((line + 1) * SIZE + col - 1);
 		}
 	} else {
-		if (line == 7) {
+		if (line == 6) {
 			if (board[(line - 2) * SIZE + col] == ' ') {
 				moves.push_back((line - 2) * SIZE + col);
 			}
@@ -334,10 +366,10 @@ list<int> Engine::getPawnMoves(int const line, int const col) {
 			moves.push_back((line - 1) * SIZE + col);
 		}
 		if (inBoard(line - 1, col + 1) && isOpponentPiece(board[(line - 1) * SIZE + col + 1])) {
-			moves.push_back((line - 1) * SIZE + col + 1);	
+			moves.push_back((line - 1) * SIZE + col + 1);
 		}
 		if (inBoard(line - 1, col - 1) && isOpponentPiece(board[(line - 1) * SIZE + col - 1])) {
-			moves.push_back((line - 1) * SIZE + col - 1);	
+			moves.push_back((line - 1) * SIZE + col - 1);
 		}
 	}
 	return moves;
@@ -394,23 +426,23 @@ void printList(list<int> l) {
 	}
 }
 
-int Engine::getScore() {
+float Engine::getScore() {
 
-	int whiteScore = 0;
-	int blackScore = 0;
+	float whiteScore = 0;
+	float blackScore = 0;
 
 	getScorePieces(whiteScore, blackScore);
 
 	return whiteScore - blackScore;
 }
 
-void Engine::getScorePieces(int &whiteScore, int &blackScore) {
+void Engine::getScorePieces(float &whiteScore, float &blackScore) {
 	int i;
 	for (i = 0; i < SIZE * SIZE; i++) {
 		if (isWhitePiece(board[i])) {
-			whiteScore = whiteScore + getPieceScore(board[i]);
+			whiteScore = whiteScore + getPieceScore(board[i], i / SIZE, i % SIZE);
 		} else if (isBlackPiece(board[i])) {
-			blackScore = blackScore + getPieceScore(board[i]);
+			blackScore = blackScore + getPieceScore(board[i], i / SIZE, i % SIZE);
 		}
 	}
 }
@@ -423,40 +455,43 @@ bool isWhitePiece(char const piece) {
 	return piece != ' ' && !isBlackPiece(piece);
 }
 
-int getPieceScore(char const piece) {
+float getPieceScore(char const piece, int const line, int const col) {
 	char piece_t = tolower(piece);
 
 	switch (piece_t) {
 		case 'r':
-			return 5;
+			return 5.0;
 		case 'q':
-			return 9;
+			return 9.0;
 		case 'b':
+			return 3.0 + bishopScores[line][col];
 		case 'n':
-			return 3;
+			return 3.0 + knightScores[line][col];
 		case 'p':
-			return 1;
+			return 1.0;
 		case 'k':
-			return 10000;
+			return 10000.0;
 	}
 
-	return 0;
+	return 0.0;
 }
 
 void Engine::getBestMove() {
 	char bestPiece = ' ';
+	int fromLine = 0;
+	int fromCol = 0;
 	int bestLine = 0;
 	int bestCol = 0;
 	int OPS = 0;
-	recursiveBestMove(DEPTH, bestPiece, bestLine, bestCol, OPS);
+	recursiveBestMove(DEPTH, fromLine, fromCol, bestPiece, bestLine, bestCol, OPS);
 
-	cout << "Best move : "<< bestPiece << bestLine << bestCol << endl;
+	cout << "Best move : "<< bestPiece << bestLine << bestCol << " From : " << fromLine << fromCol << endl;
 	cout << OPS << " positions tested" << endl;
 }
 
-int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &bestCol, int &OPS) {
+float Engine::recursiveBestMove(int depth, int &fromLine, int &fromCol, char &bestPiece, int &bestLine, int &bestCol, int &OPS) {
 
-	int positionScore = getScore();
+	float positionScore = getScore();
 
 	if (depth == 0) {
 		OPS++;
@@ -471,13 +506,13 @@ int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &be
 	int i, j;
 
 	char currentPiece;
-	int currentScore;
+	float currentScore;
 	
 	int currentLine;
 	int currentCol;
 
-	int bestScore = -100000;
-	int worstScore = 100000;
+	float bestScore = -100000;
+	float worstScore = 100000;
 
 	for (i = 0; i < SIZE; i++) {
 		for (j = 0; j < SIZE; j++) {
@@ -495,7 +530,7 @@ int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &be
 
 					changeTurn();
 
-					currentScore = recursiveBestMove(depth - 1, bestPiece, bestLine, bestCol, OPS);
+					currentScore = recursiveBestMove(depth - 1, i, j, bestPiece, bestLine, bestCol, OPS);
 
 					changeTurn();
 
@@ -503,6 +538,8 @@ int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &be
 
 					if ((currentScore > 9000 && turn == 'w') || (currentScore < -9000 && turn == 'b') ) {
 						if (depth == DEPTH) {
+							fromLine = i;
+							fromCol = j;
 							bestPiece = currentPiece;
 							bestLine = currentLine;
 							bestCol	= currentCol;
@@ -511,6 +548,8 @@ int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &be
 					} else if (currentScore > bestScore) {
 						bestScore = currentScore;
 						if (depth == DEPTH && turn == 'w') {
+							fromLine = i;
+							fromCol = j;
 							bestPiece = currentPiece;
 							bestLine = currentLine;
 							bestCol	= currentCol;
@@ -518,6 +557,8 @@ int Engine::recursiveBestMove(int depth, char &bestPiece, int &bestLine, int &be
 					} else if (currentScore < worstScore) {
 						worstScore = currentScore;
 						if (depth == DEPTH && turn == 'b') {
+							fromLine = i;
+							fromCol = j;
 							bestPiece = currentPiece;
 							bestLine = currentLine;
 							bestCol	= currentCol;

@@ -1,6 +1,6 @@
 /**
  * 
- * Chess engine created by Bogado Maximino (visit my website: maximino.fr)
+ * Chess engine created by Bogado Maximino, visit my website: maximino.fr
  * or 
  * contact me (maximino.bogadogarcia@gmail.com)
  * 
