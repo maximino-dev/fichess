@@ -39,7 +39,9 @@ class Engine {
 		void changeTurn();
 		bool inBoard(int const line, int const col);
 
-		float recursiveBestMove(int depth, int &fromLine, int &fromCol, char &bestPiece, int &bestLine, int &bestCol, int &OPS);
+		float recursiveBestMove(int depth, int &fromLine, int &fromCol, char &bestPiece, 
+			int &bestLine, int &bestCol, float ABestScore, float AWorstScore, int &OPS);
+
 		void play(char piece, int const fromLine, int const fromCol, int const line, int const col);
 	public:
 		Engine() {

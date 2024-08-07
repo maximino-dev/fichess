@@ -38,6 +38,17 @@ float bishopScores[8][8] = {
     {-0.2, -0.4, -0.3, -0.3, -0.3, -0.3, -0.4, -0.2}
 };
 
+float queenScores[8][8] = {
+    {-0.2, -0.4, -0.3, -0.3, -0.3, -0.3, -0.4, -0.2},
+    {-0.4, 0.2,  0.2,  0.2,  0.2,  0.2, 0.2, -0.4},
+    {-0.3,  0.3,  0.5,  0.4,  0.4,  0.5,  0.0, -0.3},
+    {-0.3,  0.3,  0.4,  0.8,  0.8,  0.4,  0.0, -0.3},
+    {-0.3,  0.3,  0.4,  0.8,  0.8,  0.4,  0.0, -0.3},
+    {-0.3,  0.3,  0.5,  0.4,  0.4,  0.5,  0.0, -0.3},
+    {-0.4, 0.2,  0.2,  0.2,  0.2,  0.2, 0.2, -0.4},
+    {-0.2, -0.4, -0.3, -0.3, -0.3, -0.3, -0.4, -0.2}
+};
+
 int DEPTH = 5;
 
 void Engine::initBoard() {
@@ -343,7 +354,7 @@ list<int> Engine::getPawnMoves(int const line, int const col) {
 
 	if (turn == 'b') {
 		if (line == 1) {
-			if (board[(line + 2) * SIZE + col] == ' ') {
+			if (board[(line + 2) * SIZE + col] == ' ' && board[(line + 1) * SIZE + col] == ' ') {
 				moves.push_back((line + 2) * SIZE + col);
 			}
 		}
@@ -438,6 +449,9 @@ float Engine::getScore() {
 
 void Engine::getScorePieces(float &whiteScore, float &blackScore) {
 	int i;
+	list<int> moves;
+	list<int>::iterator it;
+
 	for (i = 0; i < SIZE * SIZE; i++) {
 		if (isWhitePiece(board[i])) {
 			whiteScore = whiteScore + getPieceScore(board[i], i / SIZE, i % SIZE);
@@ -462,7 +476,7 @@ float getPieceScore(char const piece, int const line, int const col) {
 		case 'r':
 			return 5.0;
 		case 'q':
-			return 9.0;
+			return 9.0 + queenScores[line][col];
 		case 'b':
 			return 3.0 + bishopScores[line][col];
 		case 'n':
@@ -483,19 +497,19 @@ void Engine::getBestMove() {
 	int bestLine = 0;
 	int bestCol = 0;
 	int OPS = 0;
-	recursiveBestMove(DEPTH, fromLine, fromCol, bestPiece, bestLine, bestCol, OPS);
+	recursiveBestMove(DEPTH, fromLine, fromCol, bestPiece, bestLine, bestCol, -100000, 100000, OPS);
 
 	cout << "Best move : "<< bestPiece << bestLine << bestCol << " From : " << fromLine << fromCol << endl;
 	cout << OPS << " positions tested" << endl;
 }
 
-float Engine::recursiveBestMove(int depth, int &fromLine, int &fromCol, char &bestPiece, int &bestLine, int &bestCol, int &OPS) {
+float Engine::recursiveBestMove(int depth, int &fromLine, int &fromCol, 
+	char &bestPiece, int &bestLine, int &bestCol, float const ABestScore, float const AWorstScore, int &OPS) {
 
-	float positionScore = getScore();
+	OPS++;
 
-	if (depth == 0) {
-		OPS++;
-		return positionScore;
+	if (depth == 0 ) {
+		return getScore();
 	}
 
 	list<int>::iterator it;
@@ -530,7 +544,7 @@ float Engine::recursiveBestMove(int depth, int &fromLine, int &fromCol, char &be
 
 					changeTurn();
 
-					currentScore = recursiveBestMove(depth - 1, i, j, bestPiece, bestLine, bestCol, OPS);
+					currentScore = recursiveBestMove(depth - 1, i, j, bestPiece, bestLine, bestCol, bestScore, worstScore, OPS);
 
 					changeTurn();
 
@@ -547,27 +561,41 @@ float Engine::recursiveBestMove(int depth, int &fromLine, int &fromCol, char &be
 						return currentScore;
 					} else if (currentScore > bestScore) {
 						bestScore = currentScore;
-						if (depth == DEPTH && turn == 'w') {
-							fromLine = i;
-							fromCol = j;
-							bestPiece = currentPiece;
-							bestLine = currentLine;
-							bestCol	= currentCol;
+						if (turn == 'w') {
+							if (bestScore >= AWorstScore) {
+								return bestScore;
+							}
+
+							if (depth == DEPTH) {
+								fromLine = i;
+								fromCol = j;
+								bestPiece = currentPiece;
+								bestLine = currentLine;
+								bestCol	= currentCol;
+							}
 						}
 					} else if (currentScore < worstScore) {
 						worstScore = currentScore;
-						if (depth == DEPTH && turn == 'b') {
-							fromLine = i;
-							fromCol = j;
-							bestPiece = currentPiece;
-							bestLine = currentLine;
-							bestCol	= currentCol;
+						if (turn == 'b') {
+							if (worstScore <= ABestScore) {
+								return worstScore;
+							}
+
+							if (depth == DEPTH && turn == 'b') {
+								fromLine = i;
+								fromCol = j;
+								bestPiece = currentPiece;
+								bestLine = currentLine;
+								bestCol	= currentCol;
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+
+
 
 	if (turn == 'b') {
 		return worstScore;
